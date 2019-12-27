@@ -3,6 +3,7 @@ using System.Diagnostics;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
+using System.Collections.Generic;
 
 namespace GPX_Scraper
 {
@@ -14,6 +15,7 @@ namespace GPX_Scraper
         public string Sprite; // URL
         public string Gender;
         public string Owner;
+        public string Id;
     }
     public struct UserData
     {
@@ -85,11 +87,47 @@ namespace GPX_Scraper
             var partyw = Stopwatch.StartNew();
             element = driver.FindElement(By.Id("UserParty"));
             var party = driver.FindElements(By.ClassName("PartyPoke"));
-            PokeData[] newParty;
+            List<PokeData> newParty = new List<PokeData>();
             for (int i = 0; i < party.Count; i++)
             {
-                // Name
-                //party[i].
+                PokeData poke = new PokeData();
+
+                #region Nickname and Name
+                var nick = party[i].FindElement(By.TagName("strong"));
+                bool hasnick = true;
+                if (nick.Text == "No nickname")
+                {
+                    // this would totally break if some person named their pokemon "No nickname"... forget about it 
+                    hasnick = false;
+                } 
+                else
+                {
+                    Console.WriteLine(nick.Text);
+                }
+                poke.Nickname = nick.Text;
+                
+
+                IWebElement name;
+                if (hasnick)
+                {
+                    name = party[i].FindElement(By.TagName("em"));
+                }
+                else
+                {
+                    name = party[i].FindElements(By.TagName("em"))[1];
+                }
+                poke.Name = name.Text.Trim().Remove(0, 1);
+                Console.WriteLine(poke.Name);
+                #endregion
+
+                #region Nature
+                var nature = party[i].FindElements(By.ClassName("col3"));
+                var naturetext = nature[1].FindElement(By.TagName("span"));
+                poke.Nature = naturetext.Text;
+                Console.WriteLine(poke.Nature);
+                #endregion
+
+                newParty.Add(poke);
             }
             partyw.Stop();
             Console.WriteLine("User Party Elapsed={0}", partyw.Elapsed);
@@ -105,16 +143,11 @@ namespace GPX_Scraper
             WebDriverWait wait = new WebDriverWait(driver, System.TimeSpan.FromSeconds(5));
             wait.Until(driver => driver.FindElement(By.Id("infoTable"))); // confirm connected
 
-            #region Nickname
+            #region Name and Nickname
             IWebElement element = driver.FindElement(By.Id("infoPokemon"));
-            element = element.FindElement(By.TagName("em"));
-            pokedata.Nickname = element.Text;
-            #endregion
-
-            #region Name
-            element = driver.FindElement(By.Id("infoPokemon"));
             var emelements = element.FindElements(By.TagName("em"));
-            pokedata.Name = emelements[1].Text.Trim().Remove(0, 1); // get rid of dash
+            pokedata.Nickname = emelements[0].Text;
+            pokedata.Name = emelements[1].Text.Trim().Remove(0, 1);
             #endregion
 
             #region Nature
@@ -149,6 +182,10 @@ namespace GPX_Scraper
             #region Owner
             element = driver.FindElement(By.Id("infoPokemon"));
             element = element.FindElement(By.TagName("a"));
+            #endregion
+
+            #region Id
+            pokedata.Id = dataName;
             #endregion
 
             return pokedata;
