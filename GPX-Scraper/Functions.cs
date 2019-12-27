@@ -124,7 +124,14 @@ namespace GPX_Scraper
                 var nature = party[i].FindElements(By.ClassName("col3"));
                 var naturetext = nature[1].FindElement(By.TagName("span"));
                 poke.Nature = naturetext.Text;
-                Console.WriteLine(poke.Nature);
+                #endregion
+
+                #region Sprite
+                var img = party[i].FindElement(By.TagName("img"));
+                poke.Sprite = element.GetAttribute("src");
+                #endregion
+
+                #region Gender
                 #endregion
 
                 newParty.Add(poke);
